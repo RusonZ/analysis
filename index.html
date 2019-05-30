@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>manager platform</title>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-grid.css"/>
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-reboot.css"/>
+    <link rel="stylesheet" type="text/css" href="css/mricode.pagination.css" />
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-datetimepicker.css"/>
+</head>
+<script src="https://code.jquery.com/jquery-3.4.0.js"></script>
+<script src="js/bootstrap.js"></script>
+<script src="js/bootstrap.bundle.js"></script>
+<script src="js/clipboard.min.js"></script>
+<script src="js/mricode.pagination.js"></script>
+<script src="js/bootstrap-datetimepicker.js"></script>
+<style>
+    .container{
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .element{
+        padding: 10px;
+        border: 1px #b3b7bb;
+        margin: 10px;
+    }
+    .header{
+        width: 100%;
+        height: 100px;
+        background-color: #0c5460;
+        display: flex;
+    }
+    .search{
+        width: 16%;
+        padding: 5px;
+    }
+    .h2{
+        width: 100%;
+        height: 60px;
+        background-color: #c8cbcf;
+        display: flex;
+        padding: 10px;
+        flex-direction: row-reverse;
+    }
+</style>
+<body>
+    <div class="header">
+        <div class="form-group search">
+            <label  style="color: white; font-size: larger;">Tag</label>
+            <input type="email" class="form-control" id="tag" />
+            <select multiple class="form-control" style="z-index: 999; display: none;" id="tags">
+            </select>
+        </div>
+        <div class="form-group search">
+            <label  style="color: white; font-size: larger;">标题</label>
+            <input type="email" class="form-control" id="title" />
+        </div>
+        <div class="form-group search">
+            <label style="color: white; font-size: larger;">类型</label>
+            <select class="form-control" id="type">
+                <option value="">全部</option>
+                <option value=1>视频</option>
+                <option value=3>图片</option>
+            </select>
+        </div>
+        <div class="form-group search">
+            <label  style="color: white; font-size: larger;">开始时间</label>
+            <input type="text" class="form-control" id="startTime"/>
+        </div>
+        <div class="form-group search">
+            <label  style="color: white; font-size: larger;">结束时间</label>
+            <input type="text" class="form-control" id="endTime"/>
+        </div>
+        <div class="form-group search">
+            <div  style="color: #0c5460; font-size: larger;">Title</div>
+            <button  class="btn btn-primary" id="search">Search</button>
+        </div>
+    </div>
+    <div class="h2">
+        <button class="btn btn-danger" onclick="deleteAll()">屏蔽选中所有</button>
+        <select class="form-control" style="width: 10%; margin-left: 10px;margin-right: 10px;" id="order">
+            <option value="1">时间正序</option>
+            <option value="3">时间倒序</option>
+        </select>
+    </div>
+    <div class="container" id="container">
+    </div>
+    <div class="container">
+        <div id="page" class="m-pagination"></div>
+    </div>
+</body>
+<script type="application/javascript">
+    $('#startTime').datetimepicker({
+        format: 'yyyy-mm-dd hh:ii'
+    });
+    $('#endTime').datetimepicker({
+        format: 'yyyy-mm-dd hh:ii'
+    });
+
+    function deleteElement(id){
+        $.ajax({
+            method: "post",
+            url: 'https://shop.mixit.fun/manager/setStatus',
+            headers:{
+                authorization: "b743235910744bb684d17c7a04fddca7",
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({
+                objectId: id,
+                status: -1
+            }),
+            success: function(data){
+                $('#'+id).css('display', 'none');
+            },
+            error: function (e) {
+                alert('Option Error');
+            }
+        });
+    }
+
+    function deleteAll() {
+        var deleteList = $('input[name = "selected"]:checked');
+        console.log(deleteList);
+        for (var i = 0;i <deleteList.length; i++){
+            deleteElement(deleteList[i].value);
+        }
+    }
+
+    var videoHtml = function(id, title, url){
+        var html = '<div class="element" id="'+id+'">' +
+            '<div style="width: 200px;"><p>'+title+'</p></div>' +
+            '<video style="width: 200px; height: 200px;" controls="controls" src="'+url+'"/>' +
+            '<div>' +
+            '   <input type="checkbox" value="\''+id+'\'" name="selected">' +
+                '<span style="float: right">' +
+                '   <button class="btn btn-sm btn-primary" style="display: none"置顶</button>' +
+                '   <button class="btn btn-sm btn-danger" onclick="deleteElement(\''+id+'\')">屏蔽</button>' +
+                '</span>' +
+            '</div>' +
+            '</div>';
+        return html;
+    };
+
+    var imageHtml = function(id, title, url){
+        var html = '<div class="element" id="'+id+'">' +
+            '<div style="width: 200px;"><p>'+title+'</p></div>' +
+            '<img style="width: 200px; height: 200px;" src="'+url+'"/>' +
+            '<div>' +
+            '   <input type="checkbox" value="\''+id+'\'" name="selected">' +
+                '<span style="float: right">' +
+                '   <button class="btn btn-sm btn-primary" style="display: none">置顶</button>' +
+                '   <button class="btn btn-sm btn-danger" onclick="deleteElement(\''+id+'\')">屏蔽</button>' +
+                '</span>' +
+            '</div>' +
+            '</div>';
+        return html;
+    };
+
+    var tags;
+    $.ajax({
+        method: "get",
+        url: "https://shop.mixit.fun/dynamic/tag",
+        headers: {
+            authorization: "b743235910744bb684d17c7a04fddca7",
+        },
+        success: function(data){
+            tags = data.data;
+        }
+    });
+
+    var pageModel = null;
+    function search(pageNum){
+        var query = {};
+        var tag = $('#tag').val();
+        var title = $('#title').val();
+        var type = $('#type').val();
+        var startTime = $('#startTime').val();
+        var endTime = $('#endTime').val();
+        if(tag != ''){
+            query.tag = tag;
+        }
+        if(title != '') {
+            query.title = title;
+        }
+        if(type != ''){
+            query.type = parseInt(type);
+        }
+        if(startTime != ''){
+            query.startTime = startTime;
+        }
+        if(endTime != ''){
+            query.endTime = endTime;
+        }
+        query.regionCode = 'PH';
+        $.ajax({
+            method: "post",
+            url: "https://shop.mixit.fun/manager/list",
+            headers: {
+                authorization: "b743235910744bb684d17c7a04fddca7",
+            },
+            contentType: "application/json",
+            data: JSON.stringify({
+                pageNum: pageNum? pageNum: 1,
+                pageSize: 20,
+                query: query
+            }),
+            success: function(data) {
+                var medias = data.data.records;
+                var html = '';
+                medias.forEach(function (item, index) {
+                    if (item)
+                        if (item.type == 1) {
+                            html += videoHtml(item.objectId, item.title, item.playUrl);
+                        } else if (item.type == 3) {
+                            html += imageHtml(item.objectId, item.title, item.thumbnailUrl);
+                        }
+                });
+                $('#container').html(html);
+                if (!pageModel) {
+                    pageModel = $("#page").pagination({
+                        pageSize: 20,
+                        total: data.data.total
+                    });
+                }
+                pageModel.pagination('render', data.data.total);
+            }
+        });
+    }
+
+    search(1);
+
+    $('#search').click(function () {
+        search(1);
+    });
+
+    $("#page").on("pageClicked", function (event, data) {
+        var pageNum = data.pageIndex +1;
+        search(pageNum);
+    });
+
+    $('#tag').keyup(function(event){
+        var key = $('#tag').val();
+        var list = '';
+        tags.forEach(function(item, index) {
+            if (item.name.indexOf(key) > -1) {
+                list += '<option style="z-index: 999;" onclick="selectTag(this)">'+item.name+'</option>'
+            }
+        });
+        $('#tags').html(list);
+        $('#tags').css('display', 'block');
+    });
+    /*$('#tag').change(function(){
+        $('#tags').css('display', 'none');
+    });*/
+
+    function selectTag(ele) {
+        $('#tag').val($(ele)[0].label);
+        $('#tags').css('display', 'none');
+    }
+</script>
+</html>
