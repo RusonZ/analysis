@@ -119,6 +119,25 @@
         });
     }
 
+    function drowElement(id, ele) {
+        console.log(ele);
+        $.ajax({
+            method: "post",
+            url: 'https://shop.mixit.fun/manager/setTop',
+            headers:{
+                authorization: "b743235910744bb684d17c7a04fddca7",
+            },
+            contentType: 'application/json',
+            data: JSON.stringify({
+                objectId: id,
+                score: -1
+            }),
+            error: function (e) {
+                alert('Option Error');
+            }
+        });
+    }
+
     function deleteAll() {
         var deleteList = $('input[name = "selected"]:checked');
         console.log(deleteList);
@@ -134,7 +153,7 @@
             '<div>' +
             '   <input type="checkbox" value="'+id+'" name="selected">' +
                 '<span style="float: right">' +
-                '   <button class="btn btn-sm btn-primary" style="display: none"置顶</button>' +
+                '   <button class="btn btn-sm btn-primary" onclick="drowElement(\''+id+'\', this)">置底</button>' +
                 '   <button class="btn btn-sm btn-danger" onclick="deleteElement(\''+id+'\')">屏蔽</button>' +
                 '</span>' +
             '</div>' +
@@ -149,7 +168,7 @@
             '<div>' +
             '   <input type="checkbox" value="'+id+'" name="selected">' +
                 '<span style="float: right">' +
-                '   <button class="btn btn-sm btn-primary" style="display: none">置顶</button>' +
+                '   <button class="btn btn-sm btn-primary" onclick="drowElement(\''+id+'\', this)">置底</button>' +
                 '   <button class="btn btn-sm btn-danger" onclick="deleteElement(\''+id+'\')">屏蔽</button>' +
                 '</span>' +
             '</div>' +
@@ -250,13 +269,16 @@
         $('#tags').html(list);
         $('#tags').css('display', 'block');
     });
-    /*$('#tag').change(function(){
-        $('#tags').css('display', 'none');
-    });*/
-
     function selectTag(ele) {
         $('#tag').val($(ele)[0].label);
         $('#tags').css('display', 'none');
+        return true;
     }
+
+    $('#tag').change(function(){
+
+        $('#tags').css('display', 'none');
+    });
+
 </script>
 </html>
