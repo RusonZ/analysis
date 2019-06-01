@@ -24,6 +24,7 @@
         padding: 10px;
         border: 1px #b3b7bb;
         margin: 10px;
+        z-index: 1;
     }
     .header{
         width: 100%;
@@ -84,13 +85,20 @@
             <option value="3">时间倒序</option>
         </select>
     </div>
+    <div style="height: 400px; width: 15%;background-color: #b3b7bb; position:absolute;top:0px;left:0px;bottom:0px;right:0px;margin:auto;">
+
+    </div>
     <div class="container" id="container">
     </div>
     <div class="container">
         <div id="page" class="m-pagination"></div>
     </div>
+
 </body>
 <script type="application/javascript">
+    $('.element').popover({
+        container: 'body'
+    });
     $('#startTime').datetimepicker({
         format: 'yyyy-mm-dd hh:ii'
     });
@@ -144,6 +152,19 @@
         });
     }
 
+    function drow404(url) {
+        $.ajax({
+            method: 'get',
+            url: url,
+            success: function(data){
+                console.log(data);
+            },
+            error: function(data) {
+                console.log(data);
+            }
+        });
+    }
+
     function deleteAll() {
         var deleteList = $('input[name = "selected"]:checked');
         for (var i = 0;i <deleteList.length; i++){
@@ -151,31 +172,21 @@
         }
     }
 
-    var videoHtml = function(id, title, url){
+    var mediaHtml = function(id, title, url, type){
+        var element = '';
+        if (type === 1) {
+            element = '<video style="width: 200px; height: 200px;" controls="controls" src="'+url+'"/>';
+        }else if(type === 3) {
+            element = '<img style="width: 200px; height: 200px;" src="'+url+'"/>'
+        }
         var html = '<div class="element" id="'+id+'">' +
             '<div style="width: 200px;"><p>'+title+'</p></div>' +
-            '<video style="width: 200px; height: 200px;" controls="controls" src="'+url+'"/>' +
+            element +
             '<div>' +
             '   <input type="checkbox" value="'+id+'" name="selected">' +
                 '<span style="float: right">' +
+                '   <button class="btn btn-sm btn-success" >标签</button>' +
                 '   <button class="btn btn-sm btn-primary" onclick="drowElement(\''+id+'\', this)">置底</button>' +
-                '   <button class="btn btn-sm btn-primary" disabled style="display: none">已置底</button>' +
-                '   <button class="btn btn-sm btn-danger" onclick="deleteElement(\''+id+'\')">屏蔽</button>' +
-                '</span>' +
-            '</div>' +
-            '</div>';
-        return html;
-    };
-
-    var imageHtml = function(id, title, url){
-        var html = '<div class="element" id="'+id+'">' +
-            '<div style="width: 200px;"><p>'+title+'</p></div>' +
-            '<img style="width: 200px; height: 200px;" src="'+url+'"/>' +
-            '<div>' +
-            '   <input type="checkbox" value="'+id+'" name="selected">' +
-                '<span style="float: right">' +
-                '   <button class="btn btn-sm btn-primary" onclick="drowElement(\''+id+'\', this)">置底</button>' +
-                '   <button class="btn btn-sm btn-primary" disabled style="display: none">已置底</button>' +
                 '   <button class="btn btn-sm btn-danger" onclick="deleteElement(\''+id+'\')">屏蔽</button>' +
                 '</span>' +
             '</div>' +
@@ -196,6 +207,7 @@
     });
 
     var pageModel = null;
+    var searchQuery = {};
     function search(pageNum){
         var query = {};
         var tag = $('#tag').val();
@@ -219,6 +231,11 @@
             query.endTime = endTime;
         }
         query.regionCode = 'PH';
+        searchQuery = query;
+        postSearch(pageNum, query);
+    };
+
+    function postSearch(pageNum, query) {
         $.ajax({
             method: "post",
             url: "https://shop.mixit.fun/manager/list",
@@ -235,12 +252,13 @@
                 var medias = data.data.records;
                 var html = '';
                 medias.forEach(function (item, index) {
-                    if (item)
-                        if (item.type == 1) {
-                            html += videoHtml(item.objectId, item.title, item.playUrl);
-                        } else if (item.type == 3) {
-                            html += imageHtml(item.objectId, item.title, item.thumbnailUrl);
-                        }
+                    var url = '';
+                    if (item.type === 1) {
+                        url = item.playUrl;
+                    }else if (item.type === 3) {
+                        url = item.thumbnailUrl;
+                    }
+                        html += mediaHtml(item.objectId, item.title, url, item.type);
                 });
                 $('#container').html(html);
                 if (!pageModel) {
@@ -262,7 +280,7 @@
 
     $("#page").on("pageClicked", function (event, data) {
         var pageNum = data.pageIndex +1;
-        search(pageNum);
+        search(pageNum, searchQuery);
     });
 
     $('#tag').keyup(function(event){
@@ -276,16 +294,19 @@
         $('#tags').html(list);
         $('#tags').css('display', 'block');
     });
+
     function selectTag(ele) {
         $('#tag').val($(ele)[0].label);
         $('#tags').css('display', 'none');
         return true;
     }
 
-    $('#tag').change(function(){
-
-        $('#tags').css('display', 'none');
+    $('#tag').change(function() {
+        setTimeout(function () {
+            $('#tags').css('display', 'none');
+        }, 200);
     });
 
+    $('button').popover('show');
 </script>
 </html>
